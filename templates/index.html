@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wavify Hand Tracking</title>
+    <style>
+      body {
+        text-align: center;
+        font-family: Arial, sans-serif;
+      }
+      h1 {
+        color: #333;
+      }
+      #video-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+      }
+      #info {
+        margin-top: 20px;
+        font-size: 20px;
+        display: none;
+      }
+      .distance {
+        font-weight: bold;
+        color: #007bff;
+      }
+      button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Wavify Hand Tracking</h1>
+
+    <!-- Toggle Button -->
+    <button id="toggle-button">Enable Distance Measurement</button>
+
+    <!-- Video Stream -->
+    <div id="video-container">
+      <img src="{{ url_for('video_feed') }}" width="640" height="480" />
+    </div>
+
+    <!-- Distance Info (Initially Hidden) -->
+    <div id="info">
+      Left Hand Distance: <span class="distance" id="left-distance">0</span> px
+      <br />
+      Right Hand Distance:
+      <span class="distance" id="right-distance">0</span> px <br />
+      <strong
+        >Thumb Distance:
+        <span class="distance" id="thumb-distance">0</span> px</strong
+      >
+    </div>
+
+    <script>
+      let distanceEnabled = false;
+
+      document
+        .getElementById("toggle-button")
+        .addEventListener("click", function () {
+          distanceEnabled = !distanceEnabled;
+          document.getElementById("info").style.display = distanceEnabled
+            ? "block"
+            : "none";
+          this.innerText = distanceEnabled
+            ? "Disable Distance Measurement"
+            : "Enable Distance Measurement";
+        });
+
+      function updateDistances() {
+        if (!distanceEnabled) return; // Stop updating if disabled
+
+        fetch("/data")
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("left-distance").innerText = data.left;
+            document.getElementById("right-distance").innerText = data.right;
+            document.getElementById("thumb-distance").innerText =
+              data.thumb_distance;
+          });
+      }
+
+      // Update distances every 500ms only when enabled
+      setInterval(updateDistances, 500);
+    </script>
+  </body>
+</html>
