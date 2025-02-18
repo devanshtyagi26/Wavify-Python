@@ -3,97 +3,87 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wavify Hand Tracking</title>
+    <title>Hand Gesture Audio Control</title>
     <style>
       body {
         text-align: center;
         font-family: Arial, sans-serif;
-      }
-      h1 {
-        color: #333;
       }
       #video-container {
         display: flex;
         justify-content: center;
         margin-top: 20px;
       }
-      #info {
+      #distance-display {
         margin-top: 20px;
-        font-size: 20px;
-        display: none;
-      }
-      .distance {
-        font-weight: bold;
-        color: #007bff;
+        font-size: 18px;
       }
       button {
-        margin-top: 20px;
         padding: 10px 20px;
         font-size: 16px;
         cursor: pointer;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-      }
-      button:hover {
-        background-color: #0056b3;
+        margin-top: 10px;
       }
     </style>
   </head>
   <body>
-    <h1>Wavify Hand Tracking</h1>
+    <h1>Hand Gesture Audio Control</h1>
 
     <!-- Toggle Button -->
-    <button id="toggle-button">Enable Distance Measurement</button>
+    <button id="toggleAudio">🔊 Toggle Audio</button>
 
-    <!-- Video Stream -->
+    <!-- Video Feed -->
     <div id="video-container">
       <img src="{{ url_for('video_feed') }}" width="640" height="480" />
     </div>
 
-    <!-- Distance Info (Initially Hidden) -->
-    <div id="info">
-      Left Hand Distance: <span class="distance" id="left-distance">0</span> px
-      <br />
-      Right Hand Distance:
-      <span class="distance" id="right-distance">0</span> px <br />
-      <strong
-        >Thumb Distance:
-        <span class="distance" id="thumb-distance">0</span> px</strong
-      >
+    <!-- Live Distance Display -->
+    <div id="distance-display">
+      <p>Left Hand Distance: <span id="leftDistance">0</span> px</p>
+      <p>Right Hand Distance: <span id="rightDistance">0</span> px</p>
+      <p>Thumb Distance: <span id="thumbDistance">0</span> px</p>
+      <p>Audio Control: <strong id="audioStatus">ON</strong></p>
     </div>
 
     <script>
-      let distanceEnabled = false;
+      async function fetchHandData() {
+        try {
+          const response = await fetch("/data");
+          const data = await response.json();
 
-      document
-        .getElementById("toggle-button")
-        .addEventListener("click", function () {
-          distanceEnabled = !distanceEnabled;
-          document.getElementById("info").style.display = distanceEnabled
-            ? "block"
-            : "none";
-          this.innerText = distanceEnabled
-            ? "Disable Distance Measurement"
-            : "Enable Distance Measurement";
-        });
+          document.getElementById("leftDistance").textContent =
+            data.distances.left;
+          document.getElementById("rightDistance").textContent =
+            data.distances.right;
+          document.getElementById("thumbDistance").textContent =
+            data.distances.thumb_distance;
 
-      function updateDistances() {
-        if (!distanceEnabled) return; // Stop updating if disabled
-
-        fetch("/data")
-          .then((response) => response.json())
-          .then((data) => {
-            document.getElementById("left-distance").innerText = data.left;
-            document.getElementById("right-distance").innerText = data.right;
-            document.getElementById("thumb-distance").innerText =
-              data.thumb_distance;
-          });
+          document.getElementById("audioStatus").textContent =
+            data.audio_enabled ? "ON" : "OFF";
+          document.getElementById("audioStatus").style.color =
+            data.audio_enabled ? "green" : "red";
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
       }
 
-      // Update distances every 500ms only when enabled
-      setInterval(updateDistances, 500);
+      document
+        .getElementById("toggleAudio")
+        .addEventListener("click", async () => {
+          try {
+            const response = await fetch("/toggle_audio", { method: "POST" });
+            const result = await response.json();
+            document.getElementById("audioStatus").textContent =
+              result.audio_enabled ? "ON" : "OFF";
+            document.getElementById("audioStatus").style.color =
+              result.audio_enabled ? "green" : "red";
+          } catch (error) {
+            console.error("Error toggling audio:", error);
+          }
+        });
+
+      // Fetch hand data every 50ms for real-time updates
+      setInterval(fetchHandData, 50);
     </script>
   </body>
 </html>
